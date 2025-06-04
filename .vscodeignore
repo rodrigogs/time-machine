@@ -1,4 +1,5 @@
 .vscode/**
+.vscode-test/**
 typings/**
 **/.history/**
 src/**
@@ -7,4 +8,14 @@ src/**
 .gitattributes
 tsconfig.json
 tslint.json
+eslint.config.js
+**/.eslintrc.json
+**/.eslintignore
+node_modules/**
+*.vsix
+.DS_Store
+CHANGELOG.md
+CURRENT_STATE.md
+MODERNIZATION_PLAN.md
 TODO.TXT
+coverage/**

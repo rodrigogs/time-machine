@@ -1,20 +1,20 @@
 {
-    "name": "local-history",
-    "displayName": "Local History",
-    "description": "Save files into local history",
-    "publisher": "xyz",
-    "version": "1.8.1",
+    "name": "time-machine",
+    "displayName": "Time Machine",
+    "description": "A local history extension for Visual Studio Code",
+    "publisher": "rodrigogs",
+    "version": "1.0.0",
     "engines": {
-        "vscode": "^1.42.0"
+        "vscode": "^1.100.0"
     },
-    "icon": "images/local-history.png",
-    "homepage": "https://github.com/zabel-xyz/local-history",
+    "icon": "images/time-machine.png",
+    "homepage": "https://github.com/rodrigogs/time-machine",
     "repository": {
         "type": "git",
-        "url": "https://github.com/zabel-xyz/local-history.git"
+        "url": "https://github.com/rodrigogs/time-machine.git"
     },
     "bugs": {
-        "url": "https://github.com/zabel-xyz/local-history/issues"
+        "url": "https://github.com/rodrigogs/time-machine/issues"
     },
     "keywords": [
         "local",
@@ -33,223 +33,225 @@
         "viewsContainers": {
             "activitybar": [
                 {
-                    "id": "localHistory",
+                    "id": "timeMachineLocalHistory",
                     "icon": "resources/images/history.svg",
-                    "title": "Local history"
+                    "title": "Time Machine"
                 }
             ]
         },
         "views": {
-            "localHistory": [
+            "timeMachineLocalHistory": [
                 {
-                    "id": "treeLocalHistory",
+                    "id": "treeTimeMachineLocalHistory",
                     "name": "History",
-                    "when": "local-history:treeLocation == localHistory"
+                    "icon": "$(history)",
+                    "when": "time-machine:treeLocation == localHistory"
                 }
             ],
             "explorer": [
                 {
-                    "id": "treeLocalHistoryExplorer",
-                    "name": "Local history",
-                    "when": "local-history:treeLocation == explorer"
+                    "id": "treeTimeMachineLocalHistoryExplorer",
+                    "name": "Time Machine",
+                    "icon": "$(history)",
+                    "when": "time-machine:treeLocation == explorer"
                 }
             ]
         },
         "commands": [
             {
-                "command": "treeLocalHistory.refresh",
+                "command": "treeTimeMachine.refresh",
                 "title": "Refresh",
                 "when": false,
                 "icon": "$(refresh)"
             },
             {
-                "command": "treeLocalHistory.more",
+                "command": "treeTimeMachine.more",
                 "title": "See more history",
                 "when": false,
                 "icon": "$(zoom-in)"
             },
             {
-                "command": "treeLocalHistory.deleteAll",
+                "command": "treeTimeMachine.deleteAll",
                 "title": "Delete history",
                 "when": false,
                 "icon": "$(trash)"
             },
             {
-                "command": "treeLocalHistory.forCurrentFile",
+                "command": "treeTimeMachine.forCurrentFile",
                 "title": "Current file",
                 "when": false
             },
             {
-                "command": "treeLocalHistory.forAll",
+                "command": "treeTimeMachine.forAll",
                 "title": "All",
                 "when": false
             },
             {
-                "command": "treeLocalHistory.forSpecificFile",
+                "command": "treeTimeMachine.forSpecificFile",
                 "title": "Specific file",
                 "when": false
             },
             {
-                "command": "treeLocalHistory.showSideEntry",
+                "command": "treeTimeMachine.showSideEntry",
                 "title": "Open to the side",
                 "when": false
             },
             {
-                "command": "treeLocalHistory.deleteEntry",
+                "command": "treeTimeMachine.deleteEntry",
                 "title": "Delete",
                 "when": false
             },
             {
-                "command": "treeLocalHistory.compareToCurrentEntry",
+                "command": "treeTimeMachine.compareToCurrentEntry",
                 "title": "Compare with current version",
                 "when": false
             },
             {
-                "command": "treeLocalHistory.selectEntry",
+                "command": "treeTimeMachine.selectEntry",
                 "title": "Select for compare",
                 "when": false
             },
             {
-                "command": "treeLocalHistory.compareEntry",
+                "command": "treeTimeMachine.compareEntry",
                 "title": "Compare with selection",
                 "when": false
             },
             {
-                "command": "treeLocalHistory.restoreEntry",
+                "command": "treeTimeMachine.restoreEntry",
                 "title": "Restore",
                 "when": false
             },
             {
-                "command": "local-history.showAll",
-                "title": "Local History: Show all"
+                "command": "time-machine.showAll",
+                "title": "Time Machine: Show all"
             },
             {
-                "command": "local-history.showCurrent",
-                "title": "Local History: Show current version"
+                "command": "time-machine.showCurrent",
+                "title": "Time Machine: Show current version"
             },
             {
-                "command": "local-history.compareToCurrent",
-                "title": "Local History: Compare to current version"
+                "command": "time-machine.compareToCurrent",
+                "title": "Time Machine: Compare to current version"
             },
             {
-                "command": "local-history.compareToActive",
-                "title": "Local History: Compare to active file"
+                "command": "time-machine.compareToActive",
+                "title": "Time Machine: Compare to active file"
             },
             {
-                "command": "local-history.compareToPrevious",
-                "title": "Local History: Compare to previous"
+                "command": "time-machine.compareToPrevious",
+                "title": "Time Machine: Compare to previous"
             }
         ],
         "menus": {
             "commandPalette": [
                 {
-                    "command": "treeLocalHistory.forCurrentFile",
+                    "command": "treeTimeMachine.forCurrentFile",
                     "when": "false"
                 },
                 {
-                    "command": "treeLocalHistory.forAll",
+                    "command": "treeTimeMachine.forAll",
                     "when": "false"
                 },
                 {
-                    "command": "treeLocalHistory.forSpecificFile",
+                    "command": "treeTimeMachine.forSpecificFile",
                     "when": "false"
                 }
             ],
             "view/title": [
                 {
-                    "command": "treeLocalHistory.refresh",
-                    "when": "view == treeLocalHistory || view == treeLocalHistoryExplorer",
+                    "command": "treeTimeMachine.refresh",
+                    "when": "view == treeTimeMachineLocalHistory || view == treeTimeMachineLocalHistoryExplorer",
                     "group": "navigation@1"
                 },
                 {
-                    "command": "treeLocalHistory.more",
-                    "when": "view == treeLocalHistory || view == treeLocalHistoryExplorer",
+                    "command": "treeTimeMachine.more",
+                    "when": "view == treeTimeMachineLocalHistory || view == treeTimeMachineLocalHistoryExplorer",
                     "group": "navigation@2"
                 },
                 {
-                    "command": "treeLocalHistory.deleteAll",
-                    "when": "view == treeLocalHistory || view == treeLocalHistoryExplorer",
+                    "command": "treeTimeMachine.deleteAll",
+                    "when": "view == treeTimeMachineLocalHistory || view == treeTimeMachineLocalHistoryExplorer",
                     "group": "navigation@3"
                 },
                 {
-                    "command": "treeLocalHistory.forCurrentFile",
-                    "when": "view == treeLocalHistory || view == treeLocalHistoryExplorer",
+                    "command": "treeTimeMachine.forCurrentFile",
+                    "when": "view == treeTimeMachineLocalHistory || view == treeTimeMachineLocalHistoryExplorer",
                     "group": "navigation_filter"
                 },
                 {
-                    "command": "treeLocalHistory.forAll",
-                    "when": "view == treeLocalHistory || view == treeLocalHistoryExplorer",
+                    "command": "treeTimeMachine.forAll",
+                    "when": "view == treeTimeMachineLocalHistory || view == treeTimeMachineLocalHistoryExplorer",
                     "group": "navigation_filter"
                 },
                 {
-                    "command": "treeLocalHistory.forSpecificFile",
-                    "when": "view == treeLocalHistory || view == treeLocalHistoryExplorer",
+                    "command": "treeTimeMachine.forSpecificFile",
+                    "when": "view == treeTimeMachineLocalHistory || view == treeTimeMachineLocalHistoryExplorer",
                     "group": "navigation_filter"
                 }
             ],
             "view/item/context": [
                 {
-                    "command": "treeLocalHistory.showSideEntry",
-                    "when": "view == treeLocalHistory && viewItem == localHistoryItem || view == treeLocalHistoryExplorer && viewItem == localHistoryItem",
+                    "command": "treeTimeMachine.showSideEntry",
+                    "when": "view == treeTimeMachineLocalHistory && viewItem == timeMachineHistoryItem || view == treeTimeMachineLocalHistoryExplorer && viewItem == timeMachineHistoryItem",
                     "group": "1_tree-navigation@1"
                 },
                 {
-                    "command": "treeLocalHistory.compareToCurrentEntry",
-                    "when": "view == treeLocalHistory && viewItem == localHistoryItem || view == treeLocalHistoryExplorer && viewItem == localHistoryItem",
+                    "command": "treeTimeMachine.compareToCurrentEntry",
+                    "when": "view == treeTimeMachineLocalHistory && viewItem == timeMachineHistoryItem || view == treeTimeMachineLocalHistoryExplorer && viewItem == timeMachineHistoryItem",
                     "group": "2_tree-compare@1"
                 },
                 {
-                    "command": "treeLocalHistory.selectEntry",
-                    "when": "view == treeLocalHistory && viewItem == localHistoryItem || view == treeLocalHistoryExplorer && viewItem == localHistoryItem",
+                    "command": "treeTimeMachine.selectEntry",
+                    "when": "view == treeTimeMachineLocalHistory && viewItem == timeMachineHistoryItem || view == treeTimeMachineLocalHistoryExplorer && viewItem == timeMachineHistoryItem",
                     "group": "2_tree-compare@2"
                 },
                 {
-                    "command": "treeLocalHistory.compareEntry",
-                    "when": "view == treeLocalHistory && viewItem == localHistoryItem || view == treeLocalHistoryExplorer && viewItem == localHistoryItem",
+                    "command": "treeTimeMachine.compareEntry",
+                    "when": "view == treeTimeMachineLocalHistory && viewItem == timeMachineHistoryItem || view == treeTimeMachineLocalHistoryExplorer && viewItem == timeMachineHistoryItem",
                     "group": "2_tree-compare@3"
                 },
                 {
-                    "command": "treeLocalHistory.deleteEntry",
-                    "when": "view == treeLocalHistory && viewItem == localHistoryItem || view == treeLocalHistoryExplorer && viewItem == localHistoryItem",
+                    "command": "treeTimeMachine.deleteEntry",
+                    "when": "view == treeTimeMachineLocalHistory && viewItem == timeMachineHistoryItem || view == treeTimeMachineLocalHistoryExplorer && viewItem == timeMachineHistoryItem",
                     "group": "3_tree-action@1"
                 },
                 {
-                    "command": "treeLocalHistory.deleteEntry",
-                    "when": "view == treeLocalHistory && viewItem == localHistoryGrp || view == treeLocalHistoryExplorer && viewItem == localHistoryGrp",
+                    "command": "treeTimeMachine.deleteEntry",
+                    "when": "view == treeTimeMachineLocalHistory && viewItem == timeMachineHistoryGrp || view == treeTimeMachineLocalHistoryExplorer && viewItem == timeMachineHistoryGrp",
                     "group": "3_tree-action@1"
                 },
                 {
-                    "command": "treeLocalHistory.restoreEntry",
-                    "when": "view == treeLocalHistory && viewItem == localHistoryItem || view == treeLocalHistoryExplorer && viewItem == localHistoryItem",
+                    "command": "treeTimeMachine.restoreEntry",
+                    "when": "view == treeTimeMachineLocalHistory && viewItem == timeMachineHistoryItem || view == treeTimeMachineLocalHistoryExplorer && viewItem == timeMachineHistoryItem",
                     "group": "4_tree-action@1"
                 }
             ]
         },
         "configuration": {
             "type": "object",
-            "title": "Local history configuration",
+            "title": "Time Machine Configuration",
             "properties": {
-                "local-history.saveDelay": {
+                "time-machine.saveDelay": {
                     "type": "number",
                     "default": 0,
-                    "description": "Controls the delay in seconds after which local-history is saved. To avoid too many history files."
+                    "description": "Controls the delay in seconds after which time machine is saved. To avoid too many history files."
                 },
-                "local-history.daysLimit": {
+                "time-machine.daysLimit": {
                     "type": "number",
                     "default": 30,
                     "description": "A day number to purge local history. (0: no purge)"
                 },
-                "local-history.maxDisplay": {
+                "time-machine.maxDisplay": {
                     "type": "number",
                     "default": 10,
                     "description": "A max files to display"
                 },
-                "local-history.dateLocale": {
+                "time-machine.dateLocale": {
                     "type": "string",
                     "default": "",
                     "description": "Specify locale to use when displaying date"
                 },
-                "local-history.exclude": {
+                "time-machine.exclude": {
                     "type": "array",
                     "default": [
                         "**/.history/**",
@@ -261,22 +263,22 @@
                     ],
                     "description": "Files or folder to not save"
                 },
-                "local-history.enabled": {
+                "time-machine.enabled": {
                     "type": "number",
                     "default": 1,
                     "description": "Is save in local history enabled (Never=0, Always=1, Limited to workspaceFolder=2)"
                 },
-                "local-history.path": {
+                "time-machine.path": {
                     "type": "string",
                     "default": "",
                     "description": "Specify a location for .history folder (null: use workspaceFolder)"
                 },
-                "local-history.absolute": {
+                "time-machine.absolute": {
                     "type": "boolean",
                     "default": false,
-                    "description": "Save absolute path in local-history.path"
+                    "description": "Save absolute path in time-machine.path"
                 },
-                "local-history.treeLocation": {
+                "time-machine.treeLocation": {
                     "type": "string",
                     "default": "explorer",
                     "enum": [
@@ -290,19 +292,42 @@
     },
     "main": "./out/src/extension",
     "scripts": {
-        "vscode:prepublish": "tsc -p ./",
+        "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",
-        "postinstall": "node ./node_modules/vscode/bin/install"
+        "watch": "tsc -watch -p ./",
+        "lint": "eslint src --ext ts",
+        "lint:fix": "eslint src --ext ts --fix",
+        "format": "prettier --write \"src/**/*.ts\"",
+        "format:check": "prettier --check \"src/**/*.ts\"",
+        "clean": "rimraf out",
+        "precompile": "npm run clean",
+        "package": "vsce package --no-dependencies --allow-star-activation",
+        "publish": "vsce publish",
+        "test": "vitest",
+        "test:run": "vitest run",
+        "test:coverage": "vitest run --coverage",
+        "test:ui": "vitest --ui",
+        "test:watch": "vitest --watch"
     },
     "dependencies": {
-        "glob": "7.1.6",
-        "anymatch": "3.1.1",
-        "is-path-inside": "3.0.2",
-        "rimraf": "3.0.2"
+        "anymatch": "^3.1.3",
+        "glob": "^11.0.2",
+        "is-path-inside": "^4.0.0",
+        "rimraf": "^6.0.1"
     },
     "devDependencies": {
-        "typescript": "3.7.5",
-        "vscode": "1.1.36",
-        "@types/node": "13.7.1"
+        "@eslint/js": "^9.28.0",
+        "@types/node": "^22.15.29",
+        "@types/vscode": "^1.100.0",
+        "@typescript-eslint/eslint-plugin": "^8.33.0",
+        "@typescript-eslint/parser": "^8.33.0",
+        "@vitest/coverage-v8": "^3.2.0",
+        "@vitest/ui": "^3.2.0",
+        "@vscode/test-electron": "^2.5.2",
+        "@vscode/vsce": "^3.4.2",
+        "eslint": "^9.28.0",
+        "prettier": "^3.5.3",
+        "typescript": "^5.8.3",
+        "vitest": "^3.2.0"
     }
 }
