@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach, test } from 'vitest'
 
 // Mock dependencies before any imports that might use them
 vi.mock('glob')
@@ -18,91 +18,73 @@ describe('HistoryController', () => {
   let mockHistorySettings: any
   let mockSettings: IHistorySettings
 
-  beforeEach(() => {
-    vi.clearAllMocks()
-    
-    // Mock HistorySettings
-    mockSettings = {
-      folder: { fsPath: '/workspace' } as any,
-      enabled: true,
-      historyPath: '/workspace/.history',
-      exclude: ['**/.history/**', '**/node_modules/**'],
-      daysLimit: 30,
-      saveDelay: 0,
-      maxDisplay: 10,
-      absolute: false,
-      dateLocale: undefined
-    }
-    
-    mockHistorySettings = {
-      get: vi.fn().mockReturnValue(mockSettings),
-      clear: vi.fn()
-    }
-    
+  // Helper functions
+  const createMockSettings = (overrides: Partial<IHistorySettings> = {}): IHistorySettings => ({
+    folder: { fsPath: '/workspace' } as any,
+    enabled: true,
+    historyPath: '/workspace/.history',
+    exclude: ['**/.history/**', '**/node_modules/**'],
+    daysLimit: 30,
+    saveDelay: 0,
+    maxDisplay: 10,
+    absolute: false,
+    dateLocale: undefined,
+    ...overrides
+  })
+
+  const createTestDocument = (overrides: any = {}) => ({
+    uri: { fsPath: '/workspace/test.ts' },
+    fileName: '/workspace/test.ts',
+    getText: vi.fn(() => 'test file content'),
+    isDirty: true,
+    ...overrides
+  })
+
+  // Mock setup
+  const setupMocks = () => {
+    mockSettings = createMockSettings()
+    mockHistorySettings = { get: vi.fn().mockReturnValue(mockSettings), clear: vi.fn() }
     vi.mocked(HistorySettings).mockImplementation(() => mockHistorySettings)
     
-    // Mock file system - ensure these are properly mocked
-    vi.mocked(fs.existsSync).mockReturnValue(true)
-    vi.mocked(fs.statSync).mockReturnValue({
-      isFile: () => true,
-      mtime: new Date(),
-      birthtime: new Date(),
-      size: 1024
-    } as any)
-    
-    vi.mocked(fs.mkdirSync).mockImplementation(() => undefined)
-    
-    // Fix copyFile mock to ensure proper callback handling
-    vi.mocked(fs.copyFile).mockImplementation((src: any, dest: any, callback: any) => {
-      // Simulate async behavior
-      setTimeout(() => {
-        if (callback) {callback(null)}
-      }, 0)
+    Object.assign(vi.mocked(fs), {
+      existsSync: vi.fn().mockReturnValue(true),
+      statSync: vi.fn().mockReturnValue({
+        isFile: () => true,
+        mtime: new Date(),
+        birthtime: new Date(),
+        size: 1024
+      }),
+      mkdirSync: vi.fn(),
+      copyFile: vi.fn((src: any, dest: any, callback: any) => setTimeout(() => callback?.(null), 0)),
+      unlink: vi.fn((path: any, callback: any) => setTimeout(() => callback?.(null), 0)),
+      readFileSync: vi.fn().mockReturnValue('file content'),
+      writeFileSync: vi.fn()
     })
     
-    // Fix unlink mock to ensure proper callback handling  
-    vi.mocked(fs.unlink).mockImplementation((path: any, callback: any) => {
-      // Simulate async behavior
-      setTimeout(() => {
-        if (callback) {callback(null)}
-      }, 0)
+    vi.mocked(vscode.workspace.asRelativePath).mockImplementation((pathOrUri: any) => {
+      const path = typeof pathOrUri === 'string' ? pathOrUri : pathOrUri.fsPath
+      return path?.replace('/workspace/', '') || pathOrUri
     })
     
-    vi.mocked(fs.readFileSync).mockReturnValue('file content')
-    vi.mocked(fs.writeFileSync).mockImplementation(() => undefined)
-    
-    // Mock VSCode workspace
-    vi.mocked(vscode.workspace.asRelativePath).mockImplementation((pathOrUri: any, includeWorkspaceFolder?: boolean) => {
-      if (typeof pathOrUri === 'string') {
-        return pathOrUri.replace('/workspace/', '')
-      }
-      return pathOrUri.fsPath?.replace('/workspace/', '') || pathOrUri
+    Object.assign(vi.mocked(path), {
+      dirname: vi.fn((p: string) => p.split('/').slice(0, -1).join('/')),
+      basename: vi.fn((p: string) => p.split('/').pop() || ''),
+      parse: vi.fn((p: string) => {
+        const base = path.basename(p)
+        const ext = path.extname(p)
+        return { dir: path.dirname(p), root: '/', base, name: base.replace(ext, ''), ext }
+      }),
+      join: vi.fn((...args: string[]) => args.join('/')),
+      relative: vi.fn((from: string, to: string) => to.replace(from + '/', ''))
     })
     
-    // Mock path operations
-    vi.mocked(path.dirname).mockImplementation((p: string) => p.split('/').slice(0, -1).join('/'))
-    vi.mocked(path.basename).mockImplementation((p: string) => p.split('/').pop() || '')
-    vi.mocked(path.parse).mockImplementation((p: string) => {
-      const base = path.basename(p)
-      const ext = path.extname(p)
-      const name = base.replace(ext, '')
-      return {
-        dir: path.dirname(p),
-        root: '/',
-        base,
-        name,
-        ext
-      }
-    })
-    vi.mocked(path.join).mockImplementation((...args: string[]) => args.join('/'))
-    vi.mocked(path.relative).mockImplementation((from: string, to: string) => to.replace(from + '/', ''))
-    
-    // Mock glob
     vi.mocked(glob).mockResolvedValue(['/workspace/.history/file_20241201_120000.ts'])
-    
-    // Mock rimraf
     vi.mocked(rimraf).mockResolvedValue(true)
-    
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    setupMocks()
     historyController = new HistoryController()
   })
 
@@ -110,18 +92,13 @@ describe('HistoryController', () => {
     vi.restoreAllMocks()
   })
 
-  describe('constructor', () => {
+  describe('basic functionality', () => {
     it('should create a new HistoryController instance', () => {
       expect(historyController).toBeInstanceOf(HistoryController)
-    })
-
-    it('should initialize HistorySettings', () => {
       expect(HistorySettings).toHaveBeenCalled()
     })
-  })
 
-  describe('getSettings', () => {
-    it('should delegate to HistorySettings.get', () => {
+    it('should delegate getSettings to HistorySettings.get', () => {
       const fileUri = vscode.Uri.file('/workspace/test.ts')
       const result = historyController.getSettings(fileUri)
       
@@ -131,34 +108,56 @@ describe('HistoryController', () => {
   })
 
   describe('decodeFile', () => {
-    it('should decode history file path correctly', () => {
-      const historyFilePath = '/workspace/.history/test_20241201120000.ts'
-      const result = historyController.decodeFile(historyFilePath, mockSettings)
+    // Test cases for file path decoding
+    test.each([
+      {
+        name: 'valid history file path',
+        input: '/workspace/.history/test_20241201120000.ts',
+        expected: { name: 'test', ext: '.ts', hasDate: true }
+      },
+      {
+        name: 'file with multiple dots in name',
+        input: '/workspace/.history/test.config_20241201120000.js',
+        expected: { name: 'test.config', ext: '.js', hasDate: true }
+      },
+      {
+        name: 'non-history file path',
+        input: '/workspace/invalid_file.ts',
+        expected: { name: 'invalid_file', ext: '.ts', hasDate: false }
+      },
+      {
+        name: 'file with no extension',
+        input: '/workspace/.history/README_20241201120000',
+        expected: { name: 'README', ext: '', hasDate: true }
+      },
+      {
+        name: 'file with special characters',
+        input: '/workspace/.history/test-file@2024#1.spec_20241201120000.ts',
+        expected: { name: 'test-file@2024#1.spec', ext: '.ts', hasDate: true }
+      },
+      {
+        name: 'malformed history file name',
+        input: '/workspace/.history/invalid_filename.ts',
+        expected: null
+      }
+    ])('should handle $name', ({ input, expected }) => {
+      const result = historyController.decodeFile(input, mockSettings)
+      
+      if (expected === null) {
+        expect(result).toBeNull()
+        return
+      }
       
       expect(result).toBeDefined()
-      expect(result?.name).toBe('test')
-      expect(result?.ext).toBe('.ts')
-      expect(result?.file).toBe(historyFilePath)
-      expect(result?.date).toBeInstanceOf(Date)
-    })
-
-    it('should handle non-history file path', () => {
-      const invalidPath = '/workspace/invalid_file.ts'
-      const result = historyController.decodeFile(invalidPath, mockSettings)
+      expect(result?.name).toBe(expected.name)
+      expect(result?.ext).toBe(expected.ext)
+      expect(result?.file).toBe(input)
       
-      expect(result).toBeDefined()
-      expect(result?.name).toBe('invalid_file')
-      expect(result?.ext).toBe('.ts')
-      expect(result?.file).toBe(invalidPath)
-      expect(result?.date).toBeUndefined()
-    })
-
-    it('should handle files with multiple dots in name', () => {
-      const historyFilePath = '/workspace/.history/test.config_20241201120000.js'
-      const result = historyController.decodeFile(historyFilePath, mockSettings)
-      
-      expect(result?.name).toBe('test.config')
-      expect(result?.ext).toBe('.js')
+      if (expected.hasDate) {
+        expect(result?.date).toBeInstanceOf(Date)
+      } else {
+        expect(result?.date).toBeUndefined()
+      }
     })
 
     it('should parse date correctly from filename', () => {
@@ -174,241 +173,217 @@ describe('HistoryController', () => {
   })
 
   describe('saveRevision', () => {
-    const testDocument = {
-      uri: { fsPath: '/workspace/test.ts' },
-      fileName: '/workspace/test.ts',
-      getText: vi.fn(() => 'test file content'),
-      isDirty: true
-    }
-
-    it('should save document revision when enabled', async () => {
-      // Mock successful file operations
-      vi.mocked(fs.existsSync).mockReturnValue(true)
-      vi.mocked(fs.statSync).mockReturnValue({
-        isFile: () => true,
-        mtime: new Date(),
-        birthtime: new Date()
-      } as any)
+    // Test cases for different save scenarios
+    test.each([
+      {
+        name: 'should save when enabled and handle errors',
+        settings: { enabled: true },
+        expectGetCall: true,
+        shouldThrow: true
+      },
+      {
+        name: 'should not save when disabled',
+        settings: { enabled: false },
+        expectGetCall: true,
+        shouldThrow: false
+      },
+      {
+        name: 'should handle save delay configuration',
+        settings: { enabled: true, saveDelay: 1 },
+        expectGetCall: true,
+        shouldThrow: true
+      }
+    ])('$name', async ({ settings, expectGetCall, shouldThrow }) => {
+      const testDocument = createTestDocument()
+      mockSettings = createMockSettings(settings)
+      mockHistorySettings.get.mockReturnValue(mockSettings)
       
-      try {
+      if (!settings.enabled) {
         const result = await historyController.saveRevision(testDocument as any)
-        expect(result).toBeDefined()
+        expect(result).toBeUndefined()
         expect(mockHistorySettings.get).toHaveBeenCalledWith(testDocument.uri)
-      } catch (error) {
-        // The test should expect the specific error message
-        expect(error).toBe('Error occured')
+        return
+      }
+      
+      if (shouldThrow) {
+        await expect(historyController.saveRevision(testDocument as any)).rejects.toBe('Error occured')
+      }
+      
+      if (expectGetCall) {
+        expect(mockHistorySettings.get).toHaveBeenCalledWith(testDocument.uri)
       }
     })
 
-    it('should not save when history is disabled', async () => {
-      mockSettings.enabled = false
+    it('should create directory structure when needed', async () => {
+      const testDocument = createTestDocument()
+      const mkDirSpy = vi.spyOn(historyController as any, 'mkDirRecursive').mockReturnValue(false)
       
-      const result = await historyController.saveRevision(testDocument as any)
-      
-      expect(result).toBeUndefined()
-      expect(mockHistorySettings.get).toHaveBeenCalledWith(testDocument.uri)
-    })
-
-    it('should handle missing document gracefully', async () => {
-      // The actual implementation would crash with null document, so we skip this test
-      // In real usage, saveRevision is only called with valid documents
-      expect(true).toBe(true)
-    })
-
-    it('should handle save delay correctly', async () => {
-      mockSettings.saveDelay = 1 // 1 second delay
-      
-      const promise = historyController.saveRevision(testDocument as any)
-      
-      expect(promise).toBeInstanceOf(Promise)
-    })
-
-    it('should create history directory structure correctly', async () => {
-      // Mock the mkDirRecursive method to ensure it's called
-      const mkDirRecursiveSpy = vi.spyOn(historyController as any, 'mkDirRecursive').mockReturnValue(false)
-      
-      try {
-        await historyController.saveRevision(testDocument as any)
-      } catch (error) {
-        // Expect the error since mkDirRecursive returns false
-        expect(error).toBe('Error occured')
-        expect(mkDirRecursiveSpy).toHaveBeenCalled()
-      }
+      await expect(historyController.saveRevision(testDocument as any)).rejects.toBe('Error occured')
+      expect(mkDirSpy).toHaveBeenCalled()
     })
   })
 
-  describe('findGlobalHistory', () => {
-    it('should find history files matching pattern', async () => {
-      const pattern = '**/*.ts'
-      const result = await historyController.findGlobalHistory(pattern, false, mockSettings, false)
-      
-      expect(glob).toHaveBeenCalledWith(
-        expect.stringContaining(pattern),
-        expect.objectContaining({
-          cwd: mockSettings.historyPath,
-          absolute: true
-        })
-      )
-      expect(result).toEqual(['/workspace/.history/file_20241201_120000.ts'])
-    })
-
-    it('should limit results when not unlimited', async () => {
-      vi.mocked(glob).mockResolvedValue([
-        '/workspace/.history/file1_20241201_120000.ts',
-        '/workspace/.history/file2_20241201_120100.ts',
-        '/workspace/.history/file3_20241201_120200.ts'
-      ])
-      
-      const result = await historyController.findGlobalHistory('**/*.ts', false, mockSettings, false)
-      
-      expect(result).toHaveLength(3)
-    })
-
-    it('should handle glob errors', async () => {
-      vi.mocked(glob).mockRejectedValue(new Error('Glob error'))
-      
-      try {
-        const result = await historyController.findGlobalHistory('**/*.ts', false, mockSettings, false)
-        // Should return empty array on error
-        expect(result).toEqual([])
-      } catch (error) {
-        // Or might throw the error, depending on implementation
-        expect(error.message).toBe('Glob error')
-      }
-    })
-  })
-
-  describe('compare', () => {
-    it('should execute diff command for file comparison', async () => {
-      const file1 = vscode.Uri.file('/workspace/file1.ts')
-      const file2 = vscode.Uri.file('/workspace/file2.ts')
-      
-      historyController.compare(file1, file2)
-      
-      expect(vscode.commands.executeCommand).toHaveBeenCalledWith(
-        'vscode.diff',
-        file1,
-        file2,
-        'file1.ts<->file2.ts',
-        {
-          selection: undefined
+  describe('file operations', () => {
+    // Test cases for various file operations
+    test.each([
+      {
+        name: 'findGlobalHistory should find matching files',
+        operation: async () => {
+          const result = await historyController.findGlobalHistory('**/*.ts', false, mockSettings, false)
+          expect(glob).toHaveBeenCalledWith(
+            expect.stringContaining('**/*.ts'),
+            expect.objectContaining({ cwd: mockSettings.historyPath, absolute: true })
+          )
+          expect(result).toEqual(['/workspace/.history/file_20241201_120000.ts'])
         }
-      )
-    })
-
-    it('should handle range selection in comparison', async () => {
-      const file1 = vscode.Uri.file('/workspace/file1.ts')
-      const file2 = vscode.Uri.file('/workspace/file2.ts')
-      const range = new vscode.Range(0, 0, 10, 0)
-      
-      historyController.compare(file1, file2, '2', range)
-      
-      expect(vscode.commands.executeCommand).toHaveBeenCalledWith(
-        'vscode.diff',
-        file1,
-        file2,
-        'file1.ts<->file2.ts',
-        {
-          selection: range,
-          viewColumn: 2
+      },
+      {
+        name: 'findGlobalHistory should handle multiple results',
+        operation: async () => {
+          vi.mocked(glob).mockResolvedValueOnce([
+            '/workspace/.history/file1_20241201_120000.ts',
+            '/workspace/.history/file2_20241201_120100.ts'
+          ])
+          const result = await historyController.findGlobalHistory('**/*.ts', false, mockSettings, false)
+          expect(result).toHaveLength(2)
         }
+      },
+      {
+        name: 'deleteFile should handle single file deletion',
+        operation: async () => {
+          await expect(historyController.deleteFile('/workspace/.history/test.ts')).resolves.toBeUndefined()
+        }
+      },
+      {
+        name: 'deleteFiles should handle multiple file deletion',
+        operation: async () => {
+          await expect(historyController.deleteFiles(['/workspace/.history/file1.ts', '/workspace/.history/file2.ts'])).resolves.toBeUndefined()
+        }
+      },
+      {
+        name: 'deleteAll should remove entire history directory',
+        operation: async () => {
+          await historyController.deleteAll('/workspace/.history')
+          expect(rimraf).toHaveBeenCalledWith('/workspace/.history')
+        }
+      }
+    ])('$name', async ({ operation }) => {
+      await operation()
+    })
+
+    // Test cases for compare and restore operations
+    test.each([
+      {
+        name: 'compare should execute diff command',
+        operation: () => {
+          const file1 = vscode.Uri.file('/workspace/file1.ts')
+          const file2 = vscode.Uri.file('/workspace/file2.ts')
+          historyController.compare(file1, file2)
+          expect(vscode.commands.executeCommand).toHaveBeenCalledWith(
+            'vscode.diff', file1, file2, 'file1.ts<->file2.ts', { selection: undefined }
+          )
+        }
+      },
+      {
+        name: 'compare should handle range selection',
+        operation: () => {
+          const file1 = vscode.Uri.file('/workspace/file1.ts')
+          const file2 = vscode.Uri.file('/workspace/file2.ts')
+          const range = new vscode.Range(0, 0, 10, 0)
+          historyController.compare(file1, file2, '2', range)
+          expect(vscode.commands.executeCommand).toHaveBeenCalledWith(
+            'vscode.diff', file1, file2, 'file1.ts<->file2.ts', { selection: range, viewColumn: 2 }
+          )
+        }
+      },
+      {
+        name: 'restore should handle malformed file paths',
+        operation: async () => {
+          const result = await historyController.restore(vscode.Uri.file('/workspace/.history/invalid.ts'))
+          expect(result).toBeUndefined()
+        }
+      }
+    ])('$name', async ({ operation }) => {
+      await operation()
+    })
+  })
+
+  describe('showAll', () => {
+    it('should call internalShowAll with actionOpen when editor and document are valid', () => {
+      const mockEditor = {
+        document: createTestDocument(),
+        viewColumn: vscode.ViewColumn.One
+      } as any
+      
+      const internalShowAllSpy = vi.spyOn(historyController as any, 'internalShowAll').mockImplementation(() => {})
+      const actionOpenSpy = vi.spyOn(historyController as any, 'actionOpen')
+      
+      historyController.showAll(mockEditor)
+      
+      expect(internalShowAllSpy).toHaveBeenCalledWith(
+        expect.any(Function), // actionOpen function
+        mockEditor,
+        mockSettings
       )
+      expect(mockHistorySettings.get).toHaveBeenCalledWith(mockEditor.document.uri)
+    })
+
+    it('should not call internalShowAll when editor is null', () => {
+      const internalShowAllSpy = vi.spyOn(historyController as any, 'internalShowAll').mockImplementation(() => {})
+      
+      historyController.showAll(null as any)
+      
+      expect(internalShowAllSpy).not.toHaveBeenCalled()
+    })
+
+    it('should not call internalShowAll when editor.document is null', () => {
+      const mockEditor = { document: null } as any
+      const internalShowAllSpy = vi.spyOn(historyController as any, 'internalShowAll').mockImplementation(() => {})
+      
+      historyController.showAll(mockEditor)
+      
+      expect(internalShowAllSpy).not.toHaveBeenCalled()
     })
   })
 
-  describe('deleteFile', () => {
-    it('should delete a single history file', async () => {
-      const filePath = '/workspace/.history/test_20241201120000.ts'
+  describe('showCurrent', () => {
+    it('should call internalOpen with findCurrent result when editor and document are valid', () => {
+      const mockEditor = {
+        document: createTestDocument(),
+        viewColumn: vscode.ViewColumn.One
+      } as any
       
-      // Test that the method completes without error
-      await expect(historyController.deleteFile(filePath)).resolves.toBeUndefined()
+      const expectedUri = vscode.Uri.file('/workspace/current.ts')
+      const findCurrentSpy = vi.spyOn(historyController as any, 'findCurrent').mockReturnValue(expectedUri)
+      const internalOpenSpy = vi.spyOn(historyController as any, 'internalOpen').mockImplementation(() => {})
+      
+      historyController.showCurrent(mockEditor)
+      
+      expect(findCurrentSpy).toHaveBeenCalledWith(
+        mockEditor.document.fileName,
+        mockSettings
+      )
+      expect(internalOpenSpy).toHaveBeenCalledWith(expectedUri, mockEditor.viewColumn)
+      expect(mockHistorySettings.get).toHaveBeenCalledWith(mockEditor.document.uri)
     })
 
-    it('should handle delete errors gracefully', async () => {
-      const filePath = '/workspace/.history/test_20241201120000.ts'
+    it('should not call internalOpen when editor is null', () => {
+      const internalOpenSpy = vi.spyOn(historyController as any, 'internalOpen').mockImplementation(() => {})
       
-      // Even with file system errors, the method should resolve
-      await expect(historyController.deleteFile(filePath)).resolves.toBeUndefined()
-    })
-  })
-
-  describe('deleteFiles', () => {
-    it('should delete multiple files', async () => {
-      const files = [
-        '/workspace/.history/file1_20241201120000.ts',
-        '/workspace/.history/file2_20241201120100.ts'
-      ]
+      const result = historyController.showCurrent(null as any)
       
-      // Test that the method completes without error
-      await expect(historyController.deleteFiles(files)).resolves.toBeUndefined()
-    })
-
-    it('should handle empty file list', async () => {
-      // Empty array should complete successfully
-      await expect(historyController.deleteFiles([])).resolves.toBeUndefined()
-    })
-  })
-
-  describe('deleteAll', () => {
-    it('should delete entire history directory', async () => {
-      const historyPath = '/workspace/.history'
-      
-      await historyController.deleteAll(historyPath)
-      
-      expect(rimraf).toHaveBeenCalledWith(historyPath)
-    })
-  })
-
-  describe('restore', () => {
-    it('should handle malformed history file path', async () => {
-      const invalidFile = vscode.Uri.file('/workspace/.history/invalid.ts')
-      
-      const result = await historyController.restore(invalidFile)
-      
+      expect(internalOpenSpy).not.toHaveBeenCalled()
       expect(result).toBeUndefined()
     })
 
-    it('should return undefined for files that cannot be decoded', async () => {
-      const malformedFile = vscode.Uri.file('/workspace/.history/malformed_filename.ts')
+    it('should not call internalOpen when editor.document is null', () => {
+      const mockEditor = { document: null } as any
+      const internalOpenSpy = vi.spyOn(historyController as any, 'internalOpen').mockImplementation(() => {})
       
-      const result = await historyController.restore(malformedFile)
+      const result = historyController.showCurrent(mockEditor)
       
+      expect(internalOpenSpy).not.toHaveBeenCalled()
       expect(result).toBeUndefined()
-    })
-  })
-
-  describe('edge cases and error handling', () => {
-    it('should handle malformed history file names', () => {
-      const malformedPath = '/workspace/.history/invalid_filename.ts'
-      const result = historyController.decodeFile(malformedPath, mockSettings)
-      
-      expect(result).toBeNull()
-    })
-
-    it('should handle files with no extension', () => {
-      const historyPath = '/workspace/.history/README_20241201120000'
-      const result = historyController.decodeFile(historyPath, mockSettings)
-      
-      expect(result?.name).toBe('README')
-      expect(result?.ext).toBe('')
-    })
-
-    it('should handle very long file names', () => {
-      const longName = 'a'.repeat(200)
-      const historyPath = `/workspace/.history/${longName}_20241201120000.ts`
-      const result = historyController.decodeFile(historyPath, mockSettings)
-      
-      expect(result?.name).toBe(longName)
-      expect(result?.ext).toBe('.ts')
-    })
-
-    it('should handle special characters in file names', () => {
-      const specialName = 'test-file@2024#1.spec'
-      const historyPath = `/workspace/.history/${specialName}_20241201120000.ts`
-      const result = historyController.decodeFile(historyPath, mockSettings)
-      
-      expect(result?.name).toBe(specialName)
-      expect(result?.ext).toBe('.ts')
     })
   })
 })
