@@ -622,4 +622,42 @@ describe('HistoryController', () => {
       expect(getHistoryFilesSpy).toHaveBeenCalledWith(find, mockSettings, true)
     })
   })
+
+  describe('clearSettings', () => {
+    it('should delegate to settings.clear', () => {
+      historyController.clearSettings()
+      
+      expect(mockHistorySettings.clear).toHaveBeenCalled()
+    })
+  })
+
+  describe('deleteFile', () => {
+    it('should delegate to deleteFiles with single file in array', async () => {
+      const fileName = '/workspace/.history/test.ts'
+      const deleteFilesSpy = vi.spyOn(historyController, 'deleteFiles').mockResolvedValue()
+      
+      await historyController.deleteFile(fileName)
+      
+      expect(deleteFilesSpy).toHaveBeenCalledWith([fileName])
+    })
+  })
+
+  describe('deleteAll', () => {
+    it('should call rimraf with fileHistoryPath', async () => {
+      const fileHistoryPath = '/workspace/.history'
+      
+      await historyController.deleteAll(fileHistoryPath)
+      
+      expect(rimraf).toHaveBeenCalledWith(fileHistoryPath)
+    })
+
+    it('should handle rimraf error', async () => {
+      const fileHistoryPath = '/workspace/.history'
+      const error = new Error('Failed to delete')
+      
+      vi.mocked(rimraf).mockRejectedValueOnce(error)
+      
+      await expect(historyController.deleteAll(fileHistoryPath)).rejects.toThrow('Failed to delete')
+    })
+  })
 })
