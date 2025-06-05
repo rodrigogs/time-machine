@@ -570,4 +570,56 @@ describe('HistoryController', () => {
       await expect(historyController.findAllHistory(fileName, mockSettings)).rejects.toThrow('Failed to get history files')
     })
   })
+
+  describe('findGlobalHistory', () => {
+    it('should resolve empty array when settings.enabled is false', async () => {
+      const disabledSettings = { ...mockSettings, enabled: false }
+      
+      const result = await historyController.findGlobalHistory('/workspace/test.ts', false, disabledSettings)
+      
+      expect(result).toEqual([])
+    })
+
+    it('should use findAllHistory when findFile is true', async () => {
+      const find = '/workspace/test.ts'
+      const mockFileProperties = { history: ['file1.ts', 'file2.ts'] }
+      
+      const findAllHistorySpy = vi.spyOn(historyController, 'findAllHistory').mockResolvedValue(mockFileProperties as any)
+      
+      const result = await historyController.findGlobalHistory(find, true, mockSettings)
+      
+      expect(findAllHistorySpy).toHaveBeenCalledWith(find, mockSettings, undefined)
+      expect(result).toEqual(mockFileProperties.history)
+    })
+
+    it('should use getHistoryFiles when findFile is false', async () => {
+      const find = '/workspace/test.ts'
+      const historyFiles = ['file1.ts', 'file2.ts']
+      
+      const getHistoryFilesSpy = vi.spyOn(historyController as any, 'getHistoryFiles').mockResolvedValue(historyFiles)
+      
+      const result = await historyController.findGlobalHistory(find, false, mockSettings)
+      
+      expect(getHistoryFilesSpy).toHaveBeenCalledWith(find, mockSettings, undefined)
+      expect(result).toEqual(historyFiles)
+    })
+
+    it('should handle error from getHistoryFiles when findFile is false', async () => {
+      const find = '/workspace/test.ts'
+      const error = new Error('Failed to get history files')
+      
+      vi.spyOn(historyController as any, 'getHistoryFiles').mockRejectedValue(error)
+      
+      await expect(historyController.findGlobalHistory(find, false, mockSettings)).rejects.toThrow('Failed to get history files')
+    })
+
+    it('should pass noLimit parameter correctly', async () => {
+      const find = '/workspace/test.ts'
+      const getHistoryFilesSpy = vi.spyOn(historyController as any, 'getHistoryFiles').mockResolvedValue([])
+      
+      await historyController.findGlobalHistory(find, false, mockSettings, true)
+      
+      expect(getHistoryFilesSpy).toHaveBeenCalledWith(find, mockSettings, true)
+    })
+  })
 })
