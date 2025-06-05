@@ -534,4 +534,40 @@ describe('HistoryController', () => {
       expect(result).toBeInstanceOf(Promise)
     })
   })
+
+  describe('findAllHistory', () => {
+    it('should resolve undefined when settings.enabled is false', async () => {
+      const disabledSettings = { ...mockSettings, enabled: false }
+      
+      const result = await historyController.findAllHistory('/workspace/test.ts', disabledSettings)
+      
+      expect(result).toBeUndefined()
+    })
+
+    it('should resolve with history when settings.enabled is true', async () => {
+      const fileName = '/workspace/test.ts'
+      const historyFiles = ['file1.ts', 'file2.ts']
+      const mockFileProperties = { file: 'test.ts' }
+      
+      const decodeFileSpy = vi.spyOn(historyController as any, 'decodeFile').mockReturnValue(mockFileProperties)
+      const getHistoryFilesSpy = vi.spyOn(historyController as any, 'getHistoryFiles').mockResolvedValue(historyFiles)
+      
+      const result = await historyController.findAllHistory(fileName, mockSettings)
+      
+      expect(decodeFileSpy).toHaveBeenCalledWith(fileName, mockSettings, true)
+      expect(getHistoryFilesSpy).toHaveBeenCalledWith(mockFileProperties.file, mockSettings, undefined)
+      expect(result).toEqual({ ...mockFileProperties, history: historyFiles })
+    })
+
+    it('should handle error from getHistoryFiles', async () => {
+      const fileName = '/workspace/test.ts'
+      const mockFileProperties = { file: 'test.ts' }
+      const error = new Error('Failed to get history files')
+      
+      vi.spyOn(historyController as any, 'decodeFile').mockReturnValue(mockFileProperties)
+      vi.spyOn(historyController as any, 'getHistoryFiles').mockRejectedValue(error)
+      
+      await expect(historyController.findAllHistory(fileName, mockSettings)).rejects.toThrow('Failed to get history files')
+    })
+  })
 })
