@@ -386,4 +386,44 @@ describe('HistoryController', () => {
       expect(result).toBeUndefined()
     })
   })
+
+  describe('compareToActive', () => {
+    it('should call internalShowAll with actionCompareToActive when editor and document are valid', () => {
+      const mockEditor = {
+        document: createTestDocument(),
+        viewColumn: vscode.ViewColumn.One
+      } as any
+      
+      const internalShowAllSpy = vi.spyOn(historyController as any, 'internalShowAll').mockImplementation(() => {})
+      const actionCompareToActiveSpy = vi.spyOn(historyController as any, 'actionCompareToActive')
+      
+      historyController.compareToActive(mockEditor)
+      
+      expect(internalShowAllSpy).toHaveBeenCalledWith(
+        actionCompareToActiveSpy,
+        mockEditor,
+        mockSettings
+      )
+      expect(mockHistorySettings.get).toHaveBeenCalledWith(mockEditor.document.uri)
+    })
+
+    it('should not call internalShowAll when editor is null', () => {
+      const internalShowAllSpy = vi.spyOn(historyController as any, 'internalShowAll').mockImplementation(() => {})
+      
+      const result = historyController.compareToActive(null as any)
+      
+      expect(internalShowAllSpy).not.toHaveBeenCalled()
+      expect(result).toBeUndefined()
+    })
+
+    it('should not call internalShowAll when editor.document is null', () => {
+      const mockEditor = { document: null } as any
+      const internalShowAllSpy = vi.spyOn(historyController as any, 'internalShowAll').mockImplementation(() => {})
+      
+      const result = historyController.compareToActive(mockEditor)
+      
+      expect(internalShowAllSpy).not.toHaveBeenCalled()
+      expect(result).toBeUndefined()
+    })
+  })
 })
