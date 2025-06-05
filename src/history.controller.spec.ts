@@ -426,4 +426,112 @@ describe('HistoryController', () => {
       expect(result).toBeUndefined()
     })
   })
+
+  describe('compareToCurrent', () => {
+    it('should call internalShowAll with actionCompareToCurrent when editor and document are valid', () => {
+      const mockEditor = {
+        document: createTestDocument(),
+        viewColumn: vscode.ViewColumn.One
+      } as any
+      
+      const internalShowAllSpy = vi.spyOn(historyController as any, 'internalShowAll').mockImplementation(() => {})
+      const actionCompareToCurrentSpy = vi.spyOn(historyController as any, 'actionCompareToCurrent')
+      
+      historyController.compareToCurrent(mockEditor)
+      
+      expect(internalShowAllSpy).toHaveBeenCalledWith(
+        actionCompareToCurrentSpy,
+        mockEditor,
+        mockSettings
+      )
+      expect(mockHistorySettings.get).toHaveBeenCalledWith(mockEditor.document.uri)
+    })
+
+    it('should not call internalShowAll when editor is null', () => {
+      const internalShowAllSpy = vi.spyOn(historyController as any, 'internalShowAll').mockImplementation(() => {})
+      
+      const result = historyController.compareToCurrent(null as any)
+      
+      expect(internalShowAllSpy).not.toHaveBeenCalled()
+      expect(result).toBeUndefined()
+    })
+
+    it('should not call internalShowAll when editor.document is null', () => {
+      const mockEditor = { document: null } as any
+      const internalShowAllSpy = vi.spyOn(historyController as any, 'internalShowAll').mockImplementation(() => {})
+      
+      const result = historyController.compareToCurrent(mockEditor)
+      
+      expect(internalShowAllSpy).not.toHaveBeenCalled()
+      expect(result).toBeUndefined()
+    })
+  })
+
+  describe('compareToPrevious', () => {
+    it('should call internalShowAll with actionCompareToPrevious when editor and document are valid', () => {
+      const mockEditor = {
+        document: createTestDocument(),
+        viewColumn: vscode.ViewColumn.One
+      } as any
+      
+      const internalShowAllSpy = vi.spyOn(historyController as any, 'internalShowAll').mockImplementation(() => {})
+      const actionCompareToPreviousSpy = vi.spyOn(historyController as any, 'actionCompareToPrevious')
+      
+      historyController.compareToPrevious(mockEditor)
+      
+      expect(internalShowAllSpy).toHaveBeenCalledWith(
+        actionCompareToPreviousSpy,
+        mockEditor,
+        mockSettings
+      )
+      expect(mockHistorySettings.get).toHaveBeenCalledWith(mockEditor.document.uri)
+    })
+
+    it('should not call internalShowAll when editor is null', () => {
+      const internalShowAllSpy = vi.spyOn(historyController as any, 'internalShowAll').mockImplementation(() => {})
+      
+      const result = historyController.compareToPrevious(null as any)
+      
+      expect(internalShowAllSpy).not.toHaveBeenCalled()
+      expect(result).toBeUndefined()
+    })
+
+    it('should not call internalShowAll when editor.document is null', () => {
+      const mockEditor = { document: null } as any
+      const internalShowAllSpy = vi.spyOn(historyController as any, 'internalShowAll').mockImplementation(() => {})
+      
+      const result = historyController.compareToPrevious(mockEditor)
+      
+      expect(internalShowAllSpy).not.toHaveBeenCalled()
+      expect(result).toBeUndefined()
+    })
+  })
+
+  describe('compare', () => {
+    it('should delegate to internalCompare with all parameters', () => {
+      const file1 = vscode.Uri.file('/workspace/file1.ts')
+      const file2 = vscode.Uri.file('/workspace/file2.ts')
+      const column = 'beside'
+      const range = new vscode.Range(0, 0, 1, 10)
+      
+      const internalCompareSpy = vi.spyOn(historyController as any, 'internalCompare').mockReturnValue(Promise.resolve())
+      
+      const result = historyController.compare(file1, file2, column, range)
+      
+      expect(internalCompareSpy).toHaveBeenCalledWith(file1, file2, column, range)
+      expect(result).toBeInstanceOf(Promise)
+    })
+
+    it('should delegate to internalCompare with minimal parameters', () => {
+      const file1 = vscode.Uri.file('/workspace/file1.ts')
+      const file2 = vscode.Uri.file('/workspace/file2.ts')
+      
+      const internalCompareSpy = vi.spyOn(historyController as any, 'internalCompare').mockReturnValue(Promise.resolve())
+      
+      const result = historyController.compare(file1, file2)
+      
+      expect(internalCompareSpy).toHaveBeenCalledWith(file1, file2, undefined, undefined)
+      expect(result).toBeInstanceOf(Promise)
+    })
+  })
 })
